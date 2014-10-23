@@ -25,6 +25,7 @@
 
 #import <UIKit/UIKit.h>
 #import "UIViewController+RESideMenu.h"
+#import <CoreGraphics/CoreGraphics.h>
 
 #ifndef IBInspectable
 #define IBInspectable
@@ -55,12 +56,17 @@
 @property (assign, readwrite, nonatomic) IBInspectable BOOL scaleContentView;
 @property (assign, readwrite, nonatomic) IBInspectable BOOL scaleBackgroundImageView;
 @property (assign, readwrite, nonatomic) IBInspectable BOOL scaleMenuView;
+
+@property (assign, readwrite, nonatomic) IBInspectable BOOL perspectiveContentView;
+
 @property (assign, readwrite, nonatomic) IBInspectable BOOL contentViewShadowEnabled;
 @property (strong, readwrite, nonatomic) IBInspectable UIColor *contentViewShadowColor;
 @property (assign, readwrite, nonatomic) IBInspectable CGSize contentViewShadowOffset;
 @property (assign, readwrite, nonatomic) IBInspectable CGFloat contentViewShadowOpacity;
 @property (assign, readwrite, nonatomic) IBInspectable CGFloat contentViewShadowRadius;
 @property (assign, readwrite, nonatomic) IBInspectable CGFloat contentViewScaleValue;
+@property (assign, readwrite, nonatomic) IBInspectable CGFloat contentViewperspectiveValue;
+
 @property (assign, readwrite, nonatomic) IBInspectable CGFloat contentViewInLandscapeOffsetCenterX;
 @property (assign, readwrite, nonatomic) IBInspectable CGFloat contentViewInPortraitOffsetCenterX;
 @property (assign, readwrite, nonatomic) IBInspectable CGFloat parallaxMenuMinimumRelativeValue;
@@ -91,5 +97,9 @@
 - (void)sideMenu:(RESideMenu *)sideMenu didShowMenuViewController:(UIViewController *)menuViewController;
 - (void)sideMenu:(RESideMenu *)sideMenu willHideMenuViewController:(UIViewController *)menuViewController;
 - (void)sideMenu:(RESideMenu *)sideMenu didHideMenuViewController:(UIViewController *)menuViewController;
+
+- (void)sideMenu:(RESideMenu *)sideMenu moveOffsetDidChange:(CGFloat)offset;
+
+
 
 @end

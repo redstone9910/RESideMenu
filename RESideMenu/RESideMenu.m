@@ -113,7 +113,9 @@
     _contentViewShadowRadius = 8.0f;
     _contentViewInLandscapeOffsetCenterX = 30.f;
     _contentViewInPortraitOffsetCenterX  = 30.f;
+    
     _contentViewScaleValue = 0.7f;
+    _contentViewperspectiveValue = (1.0 - _contentViewScaleValue) * M_PI/10;
 }
 
 #pragma mark -
@@ -283,8 +285,13 @@
     [UIView animateWithDuration:self.animationDuration animations:^{
         if (self.scaleContentView) {
             self.contentViewContainer.transform = CGAffineTransformMakeScale(self.contentViewScaleValue, self.contentViewScaleValue);
+            if (self.perspectiveContentView) {
+                CATransform3D rotate = CATransform3DMakeRotation(self.contentViewperspectiveValue, 0, -1.0, 0);
+                self.contentViewController.view.layer.transform = CATransform3DPerspect(rotate, CGPointMake(0, 0), 200);
+            }
         } else {
             self.contentViewContainer.transform = CGAffineTransformIdentity;
+            self.contentViewController.view.layer.transform = CATransform3DIdentity;
         }
         
         if (NSFoundationVersionNumber > NSFoundationVersionNumber_iOS_7_1) {
@@ -330,6 +337,7 @@
             self.contentViewContainer.transform = CGAffineTransformMakeScale(self.contentViewScaleValue, self.contentViewScaleValue);
         } else {
             self.contentViewContainer.transform = CGAffineTransformIdentity;
+            self.contentViewController.view.layer.transform = CATransform3DIdentity;
         }
         self.contentViewContainer.center = CGPointMake((UIInterfaceOrientationIsLandscape([[UIApplication sharedApplication] statusBarOrientation]) ? -self.contentViewInLandscapeOffsetCenterX : -self.contentViewInPortraitOffsetCenterX), self.contentViewContainer.center.y);
         
@@ -377,6 +385,9 @@
         if (!strongSelf) {
             return;
         }
+        strongSelf.contentViewController.view.layer.transform = CATransform3DIdentity;
+//        strongSelf.contentViewController.view.frame = strongSelf.view.bounds;
+        
         strongSelf.contentViewContainer.transform = CGAffineTransformIdentity;
         strongSelf.contentViewContainer.frame = strongSelf.view.bounds;
         if (strongSelf.scaleMenuView) {
@@ -460,6 +471,10 @@
     self.contentViewContainer.transform = CGAffineTransformIdentity;
     self.contentViewContainer.transform = CGAffineTransformMakeScale(scale, scale);
     self.contentViewContainer.frame = frame;
+    
+//    self.contentViewController.view.layer.transform = CATransform3DIdentity;
+//    self.contentViewController.view.transform = CGAffineTransformMakeScale(scale, scale);
+    self.contentViewController.view.frame = self.contentViewContainer.bounds;
 }
 
 #pragma mark -
@@ -538,6 +553,21 @@
 #pragma mark -
 #pragma mark Pan gesture recognizer (Private)
 
+
+CATransform3D CATransform3DMakePerspective(CGPoint center, float disZ)
+{
+    CATransform3D transToCenter = CATransform3DMakeTranslation(-center.x, -center.y, 0);
+    CATransform3D transBack = CATransform3DMakeTranslation(center.x, center.y, 0);
+    CATransform3D scale = CATransform3DIdentity;
+    scale.m34 = -1.0f/disZ;
+    return CATransform3DConcat(CATransform3DConcat(transToCenter, scale), transBack);
+}
+
+CATransform3D CATransform3DPerspect(CATransform3D t, CGPoint center, float disZ)
+{
+    return CATransform3DConcat(t, CATransform3DMakePerspective(center, disZ));
+}
+
 - (void)panGestureRecognized:(UIPanGestureRecognizer *)recognizer
 {
     if ([self.delegate conformsToProtocol:@protocol(RESideMenuDelegate)] && [self.delegate respondsToSelector:@selector(sideMenu:didRecognizePanGesture:)])
@@ -578,9 +608,20 @@
         
         CGFloat backgroundViewScale = 1.7f - (0.7f * delta);
         CGFloat menuViewScale = 1.5f - (0.5f * delta);
-
+        
+        CGFloat contentViewperspectiveValue = (1.0 - contentViewScale) * M_PI/10;
+        
+        NSLog(@"contentViewScale:%f",contentViewScale);
+//        NSLog(@"contentViewTrans:%f",contentViewTrans);
+        //0.5-1.0 ~ 0.1~1.0
+        
+        if (self.delegate && [self.delegate respondsToSelector:@selector(sideMenu:moveOffsetDidChange:)]) {
+            [self.delegate sideMenu:self moveOffsetDidChange:contentViewScale];
+        }
+        
         if (!self.bouncesHorizontally) {
             contentViewScale = MAX(contentViewScale, self.contentViewScaleValue);
+            contentViewperspectiveValue = (1.0 - contentViewScale) * M_PI/10;
             backgroundViewScale = MAX(backgroundViewScale, 1.0);
             menuViewScale = MAX(menuViewScale, 1.0);
         }
@@ -639,6 +680,11 @@
         } else {
             self.contentViewContainer.transform = CGAffineTransformMakeScale(contentViewScale, contentViewScale);
             self.contentViewContainer.transform = CGAffineTransformTranslate(self.contentViewContainer.transform, point.x, 0);
+//            NSLog(@"contentViewTrans:%f",contentViewTrans);
+            if (self.perspectiveContentView) {
+                    CATransform3D rotate = CATransform3DMakeRotation(contentViewperspectiveValue, 0, -1.0, 0);
+                    self.contentViewController.view.layer.transform = CATransform3DPerspect(rotate, CGPointMake(0, 0), 200);
+            }
         }
         
         self.leftMenuViewController.view.hidden = self.contentViewContainer.frame.origin.x < 0;
@@ -647,11 +693,22 @@
         if (!self.leftMenuViewController && self.contentViewContainer.frame.origin.x > 0) {
             self.contentViewContainer.transform = CGAffineTransformIdentity;
             self.contentViewContainer.frame = self.view.bounds;
+            if (self.perspectiveContentView) {
+                self.contentViewController.view.layer.transform = CATransform3DIdentity;
+            }
+//            self.contentViewController.view.frame = self.view.bounds;
+            
             self.visible = NO;
             self.leftMenuVisible = NO;
         } else  if (!self.rightMenuViewController && self.contentViewContainer.frame.origin.x < 0) {
             self.contentViewContainer.transform = CGAffineTransformIdentity;
             self.contentViewContainer.frame = self.view.bounds;
+//            self.contentViewController.view.layer.transform =
+            if (self.perspectiveContentView) {
+                self.contentViewController.view.layer.transform = CATransform3DIdentity;
+            }
+//            self.contentViewController.view.frame = self.view.bounds;
+            
             self.visible = NO;
             self.rightMenuVisible = NO;
         }
@@ -776,10 +833,14 @@
         self.contentViewContainer.transform = CGAffineTransformIdentity;
         self.contentViewContainer.frame = self.view.bounds;
         
+        self.contentViewController.view.layer.transform = CATransform3DIdentity;
+//        self.contentViewController.view.frame = self.view.bounds;
+        
         if (self.scaleContentView) {
             self.contentViewContainer.transform = CGAffineTransformMakeScale(self.contentViewScaleValue, self.contentViewScaleValue);
         } else {
             self.contentViewContainer.transform = CGAffineTransformIdentity;
+            self.contentViewController.view.layer.transform = CATransform3DIdentity;
         }
         
         CGPoint center;
