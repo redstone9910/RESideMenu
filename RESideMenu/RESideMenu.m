@@ -611,7 +611,7 @@ CATransform3D CATransform3DPerspect(CATransform3D t, CGPoint center, float disZ)
         
         CGFloat contentViewperspectiveValue = (1.0 - contentViewScale) * M_PI/10;
         
-        NSLog(@"contentViewScale:%f",contentViewScale);
+        // NSLog(@"contentViewScale:%f",contentViewScale);
 //        NSLog(@"contentViewTrans:%f",contentViewTrans);
         //0.5-1.0 ~ 0.1~1.0
         
